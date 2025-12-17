@@ -9,6 +9,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import nuparu.tinyinv.TinyInv;
 
+// ✅ ADDITIVE IMPORT
+import net.minecraft.server.level.ServerPlayer;
+
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CapabilityEventHandler {
     public static final ResourceLocation EXTENDED_PLAYER_KEY = new ResourceLocation(TinyInv.MODID,
@@ -69,5 +72,19 @@ public class CapabilityEventHandler {
         Player player = event.getEntity();
         IExtendedPlayer extendedPlayer = CapabilityHelper.getExtendedPlayer(player);
         extendedPlayer.onDataChanged();
+    }
+
+    // ✅ ADDITIVE CODE — dimension sync fix
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        // Run next tick so TinyInv attributes are fully applied
+        player.server.execute(() -> {
+            IExtendedPlayer extendedPlayer = CapabilityHelper.getExtendedPlayer(player);
+            if (extendedPlayer != null) {
+                extendedPlayer.onDataChanged();
+            }
+        });
     }
 }
